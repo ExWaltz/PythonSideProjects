@@ -16,7 +16,6 @@ class Window:
         self.root.iconbitmap('icon.ico')
         self.isnew = True
         self.vid_frame_list = []
-        
         self.vid_Link_list = []
         self.Pimg = []
         self.chnl_link = []
