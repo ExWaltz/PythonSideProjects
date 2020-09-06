@@ -168,7 +168,7 @@ class SearchEvents:
 
 
 def main():
-    SearchEvents()._RequestWebsite("Matsuri ch.")
+    SearchEvents()._RequestWebsite("Okayu ch.")
 
 
 if __name__ == '__main__':
