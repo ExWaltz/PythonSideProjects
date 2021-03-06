@@ -1,5 +1,4 @@
 import requests
-import codecs
 import json
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -8,19 +7,20 @@ from bs4 import BeautifulSoup
 class YoutubeSearch:
     def __init__(self, search_yt):
         self.search_val = search_yt
+        self.delimiter = ":`~|"
         self.main()
 
     def getChnl(self):
         # Channel results
-        open_chnl_file = codecs.open('searchChnl.log', 'w', 'utf-8')
+        open_chnl_file = open('searchChnl.log', 'w', encoding='utf-8')
         jsn_chnl_id = self.jsn_chnl_id.get('channelId')
         jsn_chnl_title = self.jsn_sec_list[0].get(
             'channelRenderer').get('title').get('simpleText')
         jsn_chnl_thmb = self.jsn_sec_list[0].get('channelRenderer').get(
-            'thumbnail').get('thumbnails')[1].get('url')
+            'thumbnail').get('thumbnails')[0].get('url')
         jsn_chnl_thmb = str(jsn_chnl_thmb)[2:]
         open_chnl_file.write(
-            f"{jsn_chnl_title}:`~|{jsn_chnl_thmb}:`~|www.youtube.com/channel/{str(jsn_chnl_id)}\n")
+            f"{jsn_chnl_title}{self.delimiter}{jsn_chnl_thmb}{self.delimiter}www.youtube.com/channel/{str(jsn_chnl_id)}\n")
         open_chnl_file.close()
 
     def getVids(self, parent_jsn):
@@ -33,7 +33,7 @@ class YoutubeSearch:
             # Get Videos
             search_vid_id = parent_jsn.get('videoId')
             search_vid_thmb = parent_jsn.get(
-                'thumbnail').get('thumbnails')[3].get('url')
+                'thumbnail').get('thumbnails')[0].get('url')
             search_vid_thmb = str(search_vid_thmb)[8:]
             search_vid_title = parent_jsn.get(
                 'title').get('runs')[0].get('text')
@@ -74,7 +74,7 @@ class YoutubeSearch:
                     'lengthText').get('simpleText')
             # Seperator :`| for sorting data ;)
             self.open_file.write(
-                f"{search_vid_chnl_name}:`~|www.youtube.com{str(search_vid_chnl_id)}:`~|{search_vid_title}:`~|{str(search_vid_thmb)}:`~|www.youtube.com/watch?v={str(search_vid_id)}:`~|{search_vid_date}:`~|{search_vid_views}:`~|{search_vid_length}\n")
+                f"{search_vid_chnl_name}{self.delimiter}www.youtube.com{str(search_vid_chnl_id)}{self.delimiter}{search_vid_title}{self.delimiter}{str(search_vid_thmb)}{self.delimiter}www.youtube.com/watch?v={str(search_vid_id)}{self.delimiter}{search_vid_date}{self.delimiter}{search_vid_views}{self.delimiter}{search_vid_length}\n")
 
         except Exception:
             raise Exception
@@ -82,21 +82,34 @@ class YoutubeSearch:
             return self.main()
 
     def main(self):
-        self.open_file = codecs.open('searchRaw.log', 'w', 'utf-8')
+        self.open_file = open('searchRaw.log', 'w', encoding='utf-8')
         self.search_val = str(self.search_val).replace(" ", "+")
         url = f"https://www.youtube.com/results?search_query={self.search_val}"
         response = requests.get(url).text
         soup = BeautifulSoup(response, 'lxml')
         script_list = soup.find_all('script')
-        real_script = str(script_list[26])
-        real_script = real_script[39:-119]
+        # real_script = str(script_list[32])
+
+        # Debuging
+        # debug_raw = open('html_raw.log', 'w', encoding='utf-8')
+        # for sc in script_list:
+        #     debug_raw.write(str(sc))
+        #     debug_raw.write("\n\n\n")
+        # debug_raw.close()
+
+        for sc in script_list:
+            if str(sc).find("responseContext") != -1:
+                real_script = str(sc)
+                break
+
+        real_script = real_script[59:-10]
         self.open_file.write(real_script)
         self.open_file.close()
         # Debuging Purposes
-        self.open_file = codecs.open('searchRaw.log', 'r', 'utf-8')
+        self.open_file = open('searchRaw.log', 'r', encoding='utf-8')
         hold_jsn = self.open_file.read()
         self.open_file.close()
-        self.open_file = codecs.open('search.log', 'w', 'utf-8')
+        self.open_file = open('search.log', 'w', encoding='utf-8')
         jsn = json.loads(hold_jsn)
         jsn_fir_list = jsn['contents'].get('twoColumnSearchResultsRenderer').get(
             'primaryContents').get('sectionListRenderer').get('contents')
@@ -108,7 +121,7 @@ class YoutubeSearch:
             print('channel found')
             self.getChnl()
         else:
-            open_chnl_file = codecs.open('searchChnl.log', 'w', 'utf-8')
+            open_chnl_file = open('searchChnl.log', 'w', encoding='utf-8')
             open_chnl_file.write("")
             open_chnl_file.close()
 
@@ -135,4 +148,5 @@ class YoutubeSearch:
 
 
 if __name__ == '__main__':
-    YoutubeSearch("Marine ch")
+    query = input("Search:\t") 
+    YoutubeSearch(str(query))
